@@ -11,28 +11,21 @@ var onload = function () {
     var divFps = document.getElementById("fps");
     
     if (!BABYLON.Engine.isSupported()) {
-        renderZone.innerHTML("WebGL not supported");
+        renderZone.innerHTML = "WebGL not supported";
     }
 
-    var engine = new BABYLON.Engine(canvas, true);
-    engine.resize();
+    divFps.innerHTML = "Loading...";
 
-    var scene = CreateScene(engine);
-
-    var renderFunction = function () {
-        divFps.innerHTML = engine.getFps().toFixed() + " fps";
-
-        if (scene) {
-            scene.render();
-        }
-    };
-
-    engine.runRenderLoop(renderFunction);
-
-
-    // Resize
-    window.addEventListener("resize", function () {
-        engine.resize();
+    var app = new App(canvas, function () {
+        divFps.innerHTML = app.engine.getFps().toFixed() + " fps";
     });
+    app.init();
+
+    // Events
+
+    window.addEventListener("resize", function () {
+        app.engine.resize();
+    });
+
 
 };

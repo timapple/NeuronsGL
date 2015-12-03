@@ -3,7 +3,7 @@
     var scene = new BABYLON.Scene(engine);
 
     var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, new BABYLON.Vector3(0, 0, 0), scene);
-    camera.setPosition(new BABYLON.Vector3(20, 200, 400));
+    camera.setPosition(new BABYLON.Vector3(0, 0, 50));
     camera.lowerBetaLimit = 0.1;
     camera.upperBetaLimit = (Math.PI / 2) * 0.99;
     camera.lowerRadiusLimit = 150;
@@ -32,44 +32,7 @@
 
     
 
-    // Events
-    
-    //var startingPoint;
-    var pickingInfo;
 
-    var onPointerDown = function (evt) {
-        if (evt.button !== 0) {
-            return;
-        }
-
-        // check if we are under a mesh
-        var pickInfo = scene.pick(scene.pointerX, scene.pointerY, 
-            function (mesh) { 
-                return mesh !== null; 
-            });
-        if (pickInfo.hit)
-            pickingInfo = pickInfo;
-        else
-            pickingInfo = null;
-    }
-
-    var onPointerUp = function () {
-
-    }
-
-    var onPointerMove = function (evt) {
-
-    }
-
-    canvas.addEventListener("pointerdown", onPointerDown, false);
-    canvas.addEventListener("pointerup", onPointerUp, false);
-    canvas.addEventListener("pointermove", onPointerMove, false);
-
-    scene.onDispose = function () {
-        canvas.removeEventListener("pointerdown", onPointerDown);
-        canvas.removeEventListener("pointerup", onPointerUp);
-        canvas.removeEventListener("pointermove", onPointerMove);
-    }
 
     return scene;
 };
