@@ -3,7 +3,7 @@ function Brain() {
 
     this.init = function (count) {
         for (var i = 0; i < count; i++) {
-            var n = new Neuron("neuron" + i);
+            var n = new Neuron("neuron" + i, 10);
             n.position.x = 30 - Math.random() * 60;
             n.position.y = 30 - Math.random() * 60;
 
@@ -11,8 +11,8 @@ function Brain() {
         }
     };
 
-    this.tick = function (time) {
+    this.tick = function (time, dt) {
 
-    };
+    }
 
 }
