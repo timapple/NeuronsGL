@@ -20,9 +20,11 @@ function App(canvas, renderCallback) {
         this.brain = new Brain();
         this.brain.init(13);
 
-        this.renderBrain();
+        this.neuronRenderer.renderBrain(this.brain);
 
         this.repulsion = new Repulsion(this.brain);
+
+        this.editor = new Editor(this);
 
         this.lastTick = window.performance.now();
 
@@ -53,59 +55,19 @@ function App(canvas, renderCallback) {
         _this._renderCallback();
     };
 
-    this.renderBrain = function () {
-        this.brain.neurons.forEach(function (n) {
-            _this.neuronRenderer.render(n);
-        });
-    };
-
     // Events
 
-    var pickingInfo;
+    //var pickingInfo;
     this.onPointerDown = function (evt) {
-        if (evt.button !== 0) {
-            return;
-        }
-        //console.log('pick');
-
-        // check if we are under a mesh
-        var pickInfo = _this.scene.pick(_this.scene.pointerX, _this.scene.pointerY,
-            function (mesh) {
-                return mesh !== null;
-            });
-        if (pickInfo.hit)
-            pickingInfo = pickInfo;
-        else
-            pickingInfo = null;
-
-        //console.dir(pickingInfo);
+        _this.editor.onPointerDown(evt);
     };
 
-    this.onPointerUp = function () {
-
+    this.onPointerUp = function (evt) {
+        _this.editor.onPointerUp(evt);
     };
 
-    var currentMesh;
-    this.onPointerMove = function () {
-
-        var pickInfo = _this.scene.pick(_this.scene.pointerX, _this.scene.pointerY,
-            function (mesh) {
-                return true;
-            });
-
-        if (currentMesh && currentMesh != pickInfo.pickedMesh)
-            currentMesh.material.wireframe = false;
-
-        if (pickInfo.hit) {
-            if (currentMesh != pickInfo.pickedMesh) {
-                currentMesh = pickInfo.pickedMesh;
-                currentMesh.material.wireframe = true;
-            }
-        }
-        else
-            currentMesh = null;
-
-        //console.dir(currentMesh);
+    this.onPointerMove = function (evt) {
+        _this.editor.onPointerMove(evt);
     };
 
     this.addEventListeners = function () {
