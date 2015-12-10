@@ -22,7 +22,7 @@ function App(canvas, renderCallback) {
 
         this.neuronRenderer.renderBrain(this.brain);
 
-        this.repulsion = new Repulsion(this.brain);
+        this.repulsion = new Repulsion(this.brain, true);
 
         this.editor = new Editor(this);
 
@@ -42,32 +42,36 @@ function App(canvas, renderCallback) {
         var dt = now - _this.lastTick;
         if (dt >= _this.tickPeriod) {
             _this.brain.tick(now, dt);
-
+            _this.neuronRenderer.updateBrain(_this.brain);
+            _this.editor.tick(dt);
             _this.repulsion.tick(dt);
 
             _this.lastTick = now;
         }
 
-        //if (_this.scene)
-        _this.scene.render();
+        if (_this.scene)
+            _this.scene.render();
 
-        //if (_this._renderCallback)
-        _this._renderCallback();
+        if (_this._renderCallback)
+            _this._renderCallback();
     };
 
     // Events
 
     //var pickingInfo;
     this.onPointerDown = function (evt) {
-        _this.editor.onPointerDown(evt);
+        if (_this.editor)
+            _this.editor.onPointerDown(evt);
     };
 
     this.onPointerUp = function (evt) {
-        _this.editor.onPointerUp(evt);
+        if (_this.editor)
+            _this.editor.onPointerUp(evt);
     };
 
     this.onPointerMove = function (evt) {
-        _this.editor.onPointerMove(evt);
+        if (_this.editor)
+            _this.editor.onPointerMove(evt);
     };
 
     this.addEventListeners = function () {

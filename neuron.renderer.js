@@ -22,3 +22,10 @@ NeuronRenderer.prototype.renderBrain = function (brain) {
         _this.renderNeuron(n);
     });
 };
+
+NeuronRenderer.prototype.updateBrain = function (brain) {
+    //var _this = this;
+    brain.neurons.forEach(function (n) {
+        n.somaMesh.position = n.position;
+    });
+};

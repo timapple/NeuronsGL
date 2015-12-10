@@ -2,10 +2,14 @@
  * Created by timapple on 05.12.2015.
  */
 
-function Repulsion(b) {
+function Repulsion(b, onlyOnce) {
     this.b = b;
+    this.onlyOnce = onlyOnce || false;
+    this._done_one = false;
 
     this.tick = function (dt) {
+        if (this.onlyOnce && this._done_one)
+            return;
         var o = [];
         this.b.neurons.forEach(function (n) {
             o.push({
@@ -13,6 +17,7 @@ function Repulsion(b) {
                 velosity: BABYLON.Vector3.Zero()
             });
         });
+        var isWorked = false;
         for (var i = 0; i < o.length; i++) {
             for (var j = i + 1; j < o.length; j++) {
                 var r = (o[i].n.diameter / 2 + o[j].n.diameter / 2) * 1.5;
@@ -27,10 +32,14 @@ function Repulsion(b) {
                     s.scaleInPlace(6.0 * f);
                     o[i].velosity.addInPlace(s);
                     o[j].velosity.addInPlace(s.negate());
+
+                    isWorked = true;
                 }
             }
             o[i].n.position.x += o[i].velosity.x * dt / 1000;
             o[i].n.position.y += o[i].velosity.y * dt / 1000;
         }
-    }
+        if (!isWorked)
+            this._done_one = true;
+    };
 }

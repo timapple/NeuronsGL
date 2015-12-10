@@ -4,8 +4,8 @@
 
     var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, new BABYLON.Vector3(0, 0, 0), scene);
     camera.setPosition(new BABYLON.Vector3(0, 0, -140));
-    camera.lowerBetaLimit = 0.1;
-    camera.upperBetaLimit = (Math.PI / 2) * 0.99;
+    //camera.lowerBetaLimit = 0.1;
+    //camera.upperBetaLimit = (Math.PI / 2) * 0.99;
     camera.lowerRadiusLimit = 50;
 
     camera.attachControl(canvas, false);
@@ -28,11 +28,22 @@
     // ground.material = groundMaterial;
 
     // Meshes
+    var worldAxisX = BABYLON.Mesh.CreateLines("worldAxisX",
+        [new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(10, 0, 0)], scene);
+    var worldAxisY = BABYLON.Mesh.CreateLines("worldAxisY",
+        [new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, 10, 0)], scene);
+    var worldAxisZ = BABYLON.Mesh.CreateLines("worldAxisZ",
+        [new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, 0, 10)], scene);
 
-
-    
-
-
+    var axeXMat = new BABYLON.StandardMaterial("axeXMat", scene);
+    axeXMat.diffuseColor = new BABYLON.Color3.Red();
+    worldAxisX.material = axeXMat;
+    var axeYMat = new BABYLON.StandardMaterial("axeYMat", scene);
+    axeYMat.diffuseColor = new BABYLON.Color3.Green();
+    worldAxisY.material = axeYMat;
+    var axeZMat = new BABYLON.StandardMaterial("axeZMat", scene);
+    axeZMat.diffuseColor = new BABYLON.Color3.Blue();
+    worldAxisZ.material = axeZMat;
 
     return scene;
 };

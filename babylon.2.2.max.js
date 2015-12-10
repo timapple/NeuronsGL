@@ -5586,7 +5586,7 @@ var BABYLON;
             if (!Engine.audioEngine) {
                 Engine.audioEngine = new BABYLON.AudioEngine();
             }
-            BABYLON.Tools.Log("Babylon.js engine (v" + Engine.Version + ") launched");
+            BABYLON.Tools.Log("Babylon.js engine (v" + Engine.Version + ") launched.");
         }
         Object.defineProperty(Engine, "ALPHA_DISABLE", {
             get: function () {

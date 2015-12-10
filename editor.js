@@ -8,6 +8,7 @@ function Editor(app) {
     this.scene = app.scene;
     this.moveArrows = new MoveArrows(this.scene);
     this.moveArrows.init();
+    this.selectedObject = null;
 
     this.onPointerDown = function (evt) {
         if (evt.button == 0) {
@@ -23,8 +24,10 @@ function Editor(app) {
     };
 
     this.onPointerMove = function (evt) {
+        //console.log('editor.onPointerMove');
         if (_this.moving) {
-            //this.handle
+            //console.log('editor.onPointerMove');
+            this.handleMovingWithPointer(evt);
         }
         else {
             _this.handleMoveOver(evt);
@@ -62,13 +65,18 @@ function Editor(app) {
             });
 
         if (pickInfo.hit) {
+            _this.pickedMesh = pickInfo.pickedMesh;
             if (pickInfo.pickedMesh.owner) {
-                var object = pickInfo.pickedMesh.owner;
-                if (object instanceof Neuron)
-                    _this.pickNeuron(object);
+                _this.pickedObject = pickInfo.pickedMesh.owner;
 
-                if (object instanceof MoveArrows)
-                    _this.pickArrow(object);
+                if (_this.pickedObject.selectable)
+                    _this.selectedObject = _this.pickedObject;
+
+                if (_this.pickedObject instanceof Neuron)
+                    _this.pickNeuron(_this.pickedObject);
+
+                if (_this.pickedObject instanceof MoveArrows)
+                    _this.pickArrow(_this.pickedObject);
             }
         }
         else {
@@ -77,26 +85,78 @@ function Editor(app) {
     };
 
     this.pickNeuron = function (n) {
-        var p = n.position;
+        //var p = n.position;
         //console.dir(p);
-        this.moveArrows.show(p);
+        this.moveArrows.target = n;
+        this.moveArrows.show();
     };
 
     this.pickNothing = function () {
         this.moveArrows.hide();
+        this.moveArrows.target = null;
+        this.selectedObject = null;
     };
 
     this.pickArrow = function (a) {
         this.moving = true;
         this.scene.activeCamera.detachControl(this.app.canvas);
-        //TODO: handle arrow pick
+        this.moveArrows.pickAxisByMesh(this.pickedMesh);
+    };
+
+    this.handleMovingWithPointer = function (evt) {
+        var canvasRect = this.app.engine.getRenderingCanvasClientRect();
+        this.pointerX = evt.clientX - canvasRect.left;
+        this.pointerY = evt.clientY - canvasRect.top;
+
+        var screenVector = new BABYLON.Vector3(this.pointerX, this.pointerY, 0);
+        var view = this.scene.activeCamera.viewport.toGlobal(this.app.engine);
+
+        //var viewM = this.scene.getViewMatrix();
+        //var projM = this.scene.getProjectionMatrix();
+        //var b = BABYLON.Vector3.UnprojectFromTransform( screenVector, view.width, view.height,
+        //    BABYLON.Matrix.Identity(), projM );
+        //var b = BABYLON.Vector3.Unproject( screenVector, view.width, view.height,
+        //    BABYLON.Matrix.Identity(), viewM, projM );
+
+        var ray = this.scene.createPickingRay(this.pointerX, this.pointerY, BABYLON.Matrix.Identity());
+        var p2 = ray.origin, b = ray.direction;
+        var p1 = this.moveArrows.target.position, a = this.moveArrows.pickedAxis;
+        var pp = p2.subtract(p1);
+        //console.log('a: ' + a.x + ', ' + a.y + ', ' + a.z);
+        //console.log('b: ' + b.x + ', ' + b.y + ', ' + b.z);
+
+        var n = BABYLON.Vector3.Cross(a, b);
+        //console.log('n: ' + n.x + ', ' + n.y + ', ' + n.z);
+        var A = BABYLON.Matrix.FromValues(a.x, -b.x, -n.x, 0, a.y, -b.y, -n.y, 0, a.z, -b.z, -n.z, 0, 0, 0, 0, 1);
+        var det = A.determinant();
+        if (Math.abs(det) > 1e-6) {
+            var An = A.clone();
+            An.m[0] = pp.x;
+            An.m[4] = pp.y;
+            An.m[8] = pp.z;
+            var detn = An.determinant();
+            var s = detn / det;
+            //console.log('s: ' + s);
+
+            var _p1 = a.scale(s);
+            _p1.addInPlace(p1);
+            this.moveArrows.target.position = _p1;
+            //this.moveArrows
+        }
+
+    };
+
+    this.tick = function () {
+        this.moveArrows.tick();
     };
 }
 
 
-function MoveArrows(scene) {
+function MoveArrows(scene, target) {
     this.scene = scene;
-    //this._visible = false;
+    this.pickedAxis = null;
+    this.selectable = false;
+    this.target = target;
 
     this.init = function () {
         this.axeXMat = new BABYLON.StandardMaterial("axeXMat", this.scene);
@@ -130,18 +190,45 @@ function MoveArrows(scene) {
         this.hide();
     };
 
-    this.show = function (position) {
-        if (position)
-            this.meshP.position = position.clone();
-        this.meshCX.isVisible = true;
-        this.meshCY.isVisible = true;
-        this.meshCZ.isVisible = true;
+    this.show = function () {
+        if (this.target && this.target.position) {
+            this.meshP.position = this.target.position.clone();
+            this.meshCX.isVisible = true;
+            this.meshCY.isVisible = true;
+            this.meshCZ.isVisible = true;
+        }
     };
 
     this.hide = function () {
         this.meshCX.isVisible = false;
         this.meshCY.isVisible = false;
         this.meshCZ.isVisible = false;
+    };
+
+    this.tick = function () {
+        if (this.target && this.target.position)
+            this.meshP.position = this.target.position.clone();
+    };
+
+    this.pickAxisByMesh = function (mesh) {
+        this.pickedAxis = null;
+        if (mesh == this.meshCX) {
+            this.pickedAxis = new BABYLON.Vector3(1, 0, 0);
+        }
+        if (mesh == this.meshCY) {
+            this.pickedAxis = new BABYLON.Vector3(0, 1, 0);
+        }
+        if (mesh == this.meshCZ) {
+            this.pickedAxis = new BABYLON.Vector3(0, 0, 1);
+        }
+        if (this.pickedAxis) {
+            //console.log('pickedAxis: ' + this.pickedAxis);
+            //TODO: take into account parent's rotation
+            //var m = mesh.parent.getWorldMatrix();
+            //BABYLON.Vector3.TransformCoordinatesToRef(this.pickedAxis, m, this.pickedAxis);
+            //this.pickedAxis.normalize();
+        }
+
     };
 }
 

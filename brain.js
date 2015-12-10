@@ -13,6 +13,6 @@ function Brain() {
 
     this.tick = function (time, dt) {
 
-    }
+    };
 
 }
