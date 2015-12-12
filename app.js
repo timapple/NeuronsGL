@@ -20,11 +20,10 @@ function App(canvas, renderCallback) {
         this.brain = new Brain();
         this.brain.init(13);
 
-        this.neuronRenderer.renderBrain(this.brain);
-
-        this.repulsion = new Repulsion(this.brain, true);
-
         this.editor = new Editor(this);
+
+        this.syncBrain();
+        this.editor.renderAll();
 
         this.lastTick = window.performance.now();
 
@@ -42,9 +41,8 @@ function App(canvas, renderCallback) {
         var dt = now - _this.lastTick;
         if (dt >= _this.tickPeriod) {
             _this.brain.tick(now, dt);
-            _this.neuronRenderer.updateBrain(_this.brain);
+            _this.syncBrain();
             _this.editor.tick(dt);
-            _this.repulsion.tick(dt);
 
             _this.lastTick = now;
         }
@@ -56,9 +54,6 @@ function App(canvas, renderCallback) {
             _this._renderCallback();
     };
 
-    // Events
-
-    //var pickingInfo;
     this.onPointerDown = function (evt) {
         if (_this.editor)
             _this.editor.onPointerDown(evt);
@@ -86,6 +81,33 @@ function App(canvas, renderCallback) {
         this.canvas.removeEventListener(eventPrefix + "down", this.onPointerDown);
         this.canvas.removeEventListener(eventPrefix + "up", this.onPointerUp);
         this.canvas.removeEventListener(eventPrefix + "move", this.onPointerMove);
+    };
+
+    this.syncBrain = function () {
+        //var _this = this;
+        var editor = this.editor;
+        var brain = this.brain;
+        var neuronRenderer = this.neuronRenderer;
+
+        // add new neurons
+        this.brain.neurons.forEach(function (n) {
+            var filterFn = function (o) {
+                return (o.target instanceof Neuron) && (o.target == n);
+            };
+            if (editor.findObject(filterFn).length == 0) {
+                //var proxy = new NeuronProxy(n);
+                var obj = new Object3D(editor, neuronRenderer, n);
+                obj.selectable = true;
+                editor.addObject(obj);
+            }
+        });
+
+        // delete died neurons
+        editor.objects.forEach(function (o) {
+            if (!(o.target instanceof Neuron)) return;
+            if (!brain.hasNeuron(o.target))
+                editor.removeObject(o);
+        });
     };
 
 }

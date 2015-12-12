@@ -6,11 +6,31 @@ function Editor(app) {
     var _this = this;
     this.app = app;
     this.scene = app.scene;
+
+    this.selectedObject = null;
+    this.objects = [];
+
     this.moveArrows = new MoveArrows(this.scene);
     this.moveArrows.init();
-    this.selectedObject = null;
+    this.repulsion = new Repulsion(this, true);
+
+    this.renderAll = function () {
+        this.objects.forEach(function (o) {
+            o.renderer.render(o);
+        });
+    };
+
+    this.tick = function (dt) {
+        this.moveArrows.tick(dt);
+        this.repulsion.tick(dt);
+
+        this.objects.forEach(function (o) {
+            o.renderer.update(o);
+        });
+    };
 
     this.onPointerDown = function (evt) {
+        this.updatePointer(evt);
         if (evt.button == 0) {
             this.handleLeftButton(evt);
         }
@@ -24,9 +44,8 @@ function Editor(app) {
     };
 
     this.onPointerMove = function (evt) {
-        //console.log('editor.onPointerMove');
+        this.updatePointer(evt);
         if (_this.moving) {
-            //console.log('editor.onPointerMove');
             this.handleMovingWithPointer(evt);
         }
         else {
@@ -41,14 +60,13 @@ function Editor(app) {
                 return mesh && mesh.material;
             });
 
-        if (currentMesh && currentMesh != pickInfo.pickedMesh)
-        //currentMesh.material.wireframe = false;
+        if (currentMesh && currentMesh != pickInfo.pickedMesh) {
             currentMesh.material.emissiveColor = BABYLON.Color3.Black();
+        }
 
         if (pickInfo.hit) {
             if (currentMesh != pickInfo.pickedMesh) {
                 currentMesh = pickInfo.pickedMesh;
-                //currentMesh.material.wireframe = true;
                 currentMesh.material.emissiveColor = currentMesh.material.diffuseColor.clone();
             }
         }
@@ -61,7 +79,7 @@ function Editor(app) {
     this.handleLeftButton = function (evt) {
         var pickInfo = _this.scene.pick(_this.scene.pointerX, _this.scene.pointerY,
             function (mesh) {
-                return mesh;
+                return mesh.isVisible && mesh.isPickable;
             });
 
         if (pickInfo.hit) {
@@ -72,11 +90,12 @@ function Editor(app) {
                 if (_this.pickedObject.selectable)
                     _this.selectedObject = _this.pickedObject;
 
-                if (_this.pickedObject instanceof Neuron)
-                    _this.pickNeuron(_this.pickedObject);
-
-                if (_this.pickedObject instanceof MoveArrows)
+                if (_this.pickedObject instanceof MoveArrows) {
                     _this.pickArrow(_this.pickedObject);
+                }
+                else {
+                    _this.pickObject(_this.pickedObject);
+                }
             }
         }
         else {
@@ -84,10 +103,8 @@ function Editor(app) {
         }
     };
 
-    this.pickNeuron = function (n) {
-        //var p = n.position;
-        //console.dir(p);
-        this.moveArrows.target = n;
+    this.pickObject = function (o) {
+        this.moveArrows.target = o;
         this.moveArrows.show();
     };
 
@@ -101,23 +118,18 @@ function Editor(app) {
         this.moving = true;
         this.scene.activeCamera.detachControl(this.app.canvas);
         this.moveArrows.pickAxisByMesh(this.pickedMesh);
+        this.startMovePoint = this.pointerToRay();
     };
 
     this.handleMovingWithPointer = function (evt) {
-        var canvasRect = this.app.engine.getRenderingCanvasClientRect();
-        this.pointerX = evt.clientX - canvasRect.left;
-        this.pointerY = evt.clientY - canvasRect.top;
+        var newMovePoint = this.pointerToRay();
+        var dv = newMovePoint.subtract(this.startMovePoint);
+        this.startMovePoint = newMovePoint;
 
-        var screenVector = new BABYLON.Vector3(this.pointerX, this.pointerY, 0);
-        var view = this.scene.activeCamera.viewport.toGlobal(this.app.engine);
+        this.selectedObject.position.addInPlace(dv);
+    };
 
-        //var viewM = this.scene.getViewMatrix();
-        //var projM = this.scene.getProjectionMatrix();
-        //var b = BABYLON.Vector3.UnprojectFromTransform( screenVector, view.width, view.height,
-        //    BABYLON.Matrix.Identity(), projM );
-        //var b = BABYLON.Vector3.Unproject( screenVector, view.width, view.height,
-        //    BABYLON.Matrix.Identity(), viewM, projM );
-
+    this.pointerToRay = function () {
         var ray = this.scene.createPickingRay(this.pointerX, this.pointerY, BABYLON.Matrix.Identity());
         var p2 = ray.origin, b = ray.direction;
         var p1 = this.moveArrows.target.position, a = this.moveArrows.pickedAxis;
@@ -140,14 +152,31 @@ function Editor(app) {
 
             var _p1 = a.scale(s);
             _p1.addInPlace(p1);
-            this.moveArrows.target.position = _p1;
-            //this.moveArrows
+            return _p1;
         }
-
+        return null;
     };
 
-    this.tick = function () {
-        this.moveArrows.tick();
+    this.updatePointer = function (evt) {
+        var canvasRect = this.app.engine.getRenderingCanvasClientRect();
+        this.pointerX = evt.clientX - canvasRect.left;
+        this.pointerY = evt.clientY - canvasRect.top;
+    };
+
+    this.addObject = function (o) {
+        var i = this.objects.indexOf(o);
+        if (i != -1) return;
+        this.objects.push(o);
+    };
+
+    this.removeObject = function (o) {
+        var i = this.objects.indexOf(o);
+        if (i == -1) return;
+        this.objects = this.objects.splice(i, 1);
+    };
+
+    this.findObject = function (filterFn, thisArg) {
+        return this.objects.filter(filterFn, thisArg);
     };
 }
 
@@ -166,9 +195,9 @@ function MoveArrows(scene, target) {
         this.axeZMat = new BABYLON.StandardMaterial("axeZMat", this.scene);
         this.axeZMat.diffuseColor = new BABYLON.Color3.Blue();
 
-
         this.meshP = BABYLON.Mesh.CreateSphere("arrowsP", 1, 3, this.scene);
         this.meshP.isVisible = false;
+        this.meshP.isPickable = false;
 
         this.meshCY = BABYLON.Mesh.CreateCylinder("arrowsCY", 18, 1, 1, 6, 1, scene);
         this.meshCY.material = this.axeYMat;
@@ -233,7 +262,17 @@ function MoveArrows(scene, target) {
 }
 
 /*
- Object.defineProperty(MoveArrows, 'visible', {
- get: function() { return this.meshP.isVisible; },
- set: function(v) { v ? this.show() : this.hide(); }
- });*/
+ */
+
+function Object3D(editor, renderer, target) {
+    this.editor = editor;
+    this.renderer = renderer;
+    this.target = target;
+    this.position = new BABYLON.Vector3(0, 0, 0);
+}
+
+Object.defineProperty(Object3D, 'diameter', {
+    get: function () {
+        return this.renderer.diameterFor(this.target);
+    }
+});

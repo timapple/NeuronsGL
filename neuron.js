@@ -1,8 +1,10 @@
-var Neuron = function (name, diameter) {
-	this.name = name;
-	this.diameter = diameter;
-	this.position = new BABYLON.Vector3(0, 0, 0);
-    this.selectable = true;
+var Neuron = function (name, uid, brain) {
+    this.name = name;
+    this.uid = uid;
+    this.brain = brain;
+
+    this.tick = function (time, dt) {
+
+    };
 };
 
-//Neuron.prototype.

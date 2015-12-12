@@ -1,18 +1,26 @@
 function Brain() {
     this.neurons = [];
+    this._uid = 0;
 
     this.init = function (count) {
         for (var i = 0; i < count; i++) {
-            var n = new Neuron("neuron" + i, 10);
-            n.position.x = 30 - Math.random() * 60;
-            n.position.y = 30 - Math.random() * 60;
-
-            this.neurons.push(n);
+            this.addNeuron("neuron" + i);
         }
     };
 
-    this.tick = function (time, dt) {
+    this.addNeuron = function (name) {
+        var n = new Neuron(name, this._uid++, this);
+        this.neurons.push(n);
+    };
 
+    this.hasNeuron = function (n) {
+        return this.neurons.indexOf(n) != -1;
+    };
+
+    this.tick = function (time, dt) {
+        this.neurons.forEach(function (n) {
+            n.tick(time, dt);
+        });
     };
 
 }
