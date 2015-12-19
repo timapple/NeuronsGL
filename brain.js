@@ -1,6 +1,5 @@
 function Brain() {
     this.neurons = [];
-    this._uid = 0;
 
     this.init = function (count) {
         for (var i = 0; i < count; i++) {
@@ -9,7 +8,7 @@ function Brain() {
     };
 
     this.addNeuron = function (name) {
-        var n = new Neuron(name, this._uid++, this);
+        var n = new Neuron(name, this);
         this.neurons.push(n);
     };
 

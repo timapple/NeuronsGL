@@ -1,6 +1,6 @@
-var Neuron = function (name, uid, brain) {
+var Neuron = function (name, brain) {
     this.name = name;
-    this.uid = uid;
+    this.uid = this.getUid();
     this.brain = brain;
 
     this.tick = function (time, dt) {
@@ -8,3 +8,19 @@ var Neuron = function (name, uid, brain) {
     };
 };
 
+(function () {
+    var neurons = 0;
+    //var connections = 0;
+    Neuron.getUid = function () {
+        return neurons++;
+    };
+    /*Neuron.connection.uid = function() {
+     return connections++;
+     }
+     Neuron.quantity = function() {
+     return {
+     neurons: neurons,
+     connections: connections
+     }
+     }*/
+})();
